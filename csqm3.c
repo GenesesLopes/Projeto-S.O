@@ -45,7 +45,8 @@ int
   
 float
   tc[3] = {4.5, 4.0, 3.5},  /* classe 0,1,2 tempo de cpu  */
-  td = 25.0, sd = 7.5,   /* disk time mean, std. dev. */
+  //td = 25.0, sd = 7.5,   /* disk time mean, std. dev. */
+  td = 29.0, sd = 8.0,   /* disk time mean, std. dev. */
   timp[3] = {0.0, 35.0, 34.0}, sdimp[3] = {0.0, 11.0, 10.0};
   
 main()
@@ -207,13 +208,15 @@ main()
                   {              
                     if( i == 1 || i == 2 || i == 3) then p->un = irandom(1,3); //selecionar disco para editores
                     else if(i == 4 || i == 7 || i == 10 || i == 11 || i == 12) then p->un = 1; // disco para o setor 1
-                         else if(i == 5 || i == 8 || i == 12 || i == 13 ) then p->un = 2; //Disco para o setor 2
-                         else p->un = 3; //Disco para o setor 3
+                    else if(i == 5 || i == 8 || i == 12 || i == 13 ) then p->un = 2; //Disco para o setor 2
+                    else p->un = 3; //Disco para o setor 3
+                    schedule(9,0.0,i);//Agenda para selecionar Disco
                   }
-                  else //impressora
-                 
-                 schedule(9,0.0,i);
-                                            
+                  else //Condição de impressora
+                  {
+                  	schedule(11,0.0,i);//Agenda para selecionar impressora
+                  }
+                           
                  }
                                     
 		      else if(p->loc == 1) then schedule(13,0.0,i);
@@ -249,7 +252,7 @@ main()
             break;
               
             case 12:  /* libera Impressora, end tour */
-              release(impressora,i); 
+              release(impressora[p->sel_imp],i); 
               p->esc=1;
               schedule(7,0.0,i);
             break;
