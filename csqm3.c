@@ -50,52 +50,52 @@ float
   
 main()
   {
-    int i, j, event, n_intra[2], n_inter[2]; 
+    int i, j, event, n_intra[3], n_inter[1]; 
 	
-	float t, s_intra[2], s_inter[2], velRede = 1000000.0, tempo_rede; 
+	float t, s_intra[3], s_inter[1], velRede = 1000000.0, tempo_rede; 
 	
 	struct token *p;
     
-    n_intra[0] = n_intra[1] = 0; s_intra[0] = s_intra[1] = 0.0;
-    n_inter[0] = n_inter[1] = 0; s_inter[0] = s_inter[1] = 0.0;
+    n_intra[0] = n_intra[1] = n_intra[2] = 0; s_intra[0] = s_intra[1] = s_intra[2] = 0.0;
+    n_inter[0] = 0; s_inter[0] = 0.0;
      
     for (i = 1; i <= n0; i++) 
         {
-         task[i].cls = 2;
-         task[i].loc = 1;
+         task[i].cls = 2;//Classe 2
+         task[i].loc = 1; //Local == intranet
         }
     for (i = n0+1; i <= n0+n1; i++)
         {
-        task[i].cls = 1; 
-        task[i].loc = 1;
-         }
+        task[i].cls = 1;  //Classe 1
+        task[i].loc = 1; //Local == intranet
+        }
     
     for (i = n0+n1+1; i <= n0+n1+n2; i++)
         {
-        task[i].cls = 0;
-        task[i].loc = 1;    
+        task[i].cls = 0;//Classe 0
+        task[i].loc = 1;  //Local == intranet
          }
     for (i = n0+n1+n2+1; i <= nt; i++)
         {
-         task[i].cls = 0;
-         task[i].loc = 2;
+         task[i].cls = 0; //classe 0
+         task[i].loc = 2; //Local == internet
          }
-    for (i = 1; i <= nt; i++){
+    for (i = 1; i <= nt; i++){//Defiine os setores
         if(i==1 || i==4 || i==7 || i==10 || i==11 || i ==12) then task[i].setor = 1;
         else if(i==2 || i==5 || i==8 || i==13 || i==14) then task[i].setor = 2;
         else task[i].setor = 3; 
     }
          
-    smpl(0,"Empresa ISTUE");
+    smpl(0,"Empresa ISTUE - Revista Agenda Capital");
     
     //trace(2);//Visualizar evento em tempo de simulacao
     
     cpu = facility("CPU",1);
     
-    link[1] = facility("Link Ent Intra");
-    link[2] = facility("Link Sai Intra");
-    link[3] = facility("Link Ent Inter");
-    link[4] = facility("Link Sai Inter");
+    link[1] = facility("Link Ent Intra",1);
+    link[2] = facility("Link Sai Intra",1);
+    link[3] = facility("Link Ent Inter",1);
+    link[4] = facility("Link Sai Inter",1);
       
     disk[1] = facility("Disco-1",1);
     disk[2] = facility("Disco-2",1);
@@ -104,6 +104,7 @@ main()
     impressora[1] = facility("Impressora-1",1);
     impressora[2] = facility("Impressora-2",1);
      
+    stream(2);//Semente (Diretamente ligado a numeros randomicos )
     // agendamento intranet/internet:
     schedule(1,0.15,1);
     schedule(2,0.15,10);
@@ -137,16 +138,10 @@ main()
               p->esc=0;
               p->ts=stime();
               
-              /* atribuição de tempo de CPU*/
-                tc[0] = 4.5;
-                tc[1] = 4.0;
-                tc[2] = 3.5;  
+              do{ p->pac = expntl(420.0);
+                } while (p->pac < 360.0 || p->pac > 480.0);
               
-              // Suprimiram tempo de rede...
-              do{ p->pac = expntl(500.0);
-                } while (p->pac < 400.0 || p->pac > 600.0);
-              
-              aux = irandom(1,10);
+              aux = irandom(1,10);//Sorteio de 1 a 10 para calculo percentual
               
               if(aux >= 1 && aux <= 6) p->def_rec = 1;//def_rec = 1 para impressora
                      else p->def_rec = 2;//def_rec= 2 para discos
@@ -157,16 +152,14 @@ main()
             case 2:  /* begin tour internet*/
               p->esc=0;
               p->ts=stime();
-              p->def_rec = 2;
+              //p->def_rec = 2;
+              aux = irandom(1,10);//Sorteio de 1 a 10 para calculo percentual
               
-              /* atribuição de tempo de CPU*/
-                tc[0] = 4.5;
-                tc[1] = 4.0;
-                tc[2] = 3.5;
-		  
-              // Suprimiram tempo de rede...
-              do{ p->pac = expntl(500.0);
-                } while (p->pac < 400.0 || p->pac > 600.0);
+              if(aux >= 1 && aux <= 6) p->def_rec = 1;//def_rec = 1 para impressora
+                     else p->def_rec = 2;//def_rec= 2 para discos
+
+              do{ p->pac = expntl(420.0);
+                } while (p->pac < 360.0 || p->pac > 480.0);
               
               schedule(4,0.0,i);
             break;
@@ -176,7 +169,7 @@ main()
                  tempo_rede = (p->pac * 8000.0) / velRede;
                  
                  if (j == 1) then tempo_rede = tempo_rede*1.05;
-                 if (j == 2) then tempo_rede = tempo_rede*1.10;
+                 if (j == 0) then tempo_rede = tempo_rede*1.10;
                  
                  if (request(link[1],i,0)!= 1) then schedule(5,tempo_rede,i); 
             break;
@@ -186,7 +179,7 @@ main()
                  tempo_rede = (p->pac * 8000.0) / velRede;
                  
                  if (j == 1) then tempo_rede = tempo_rede*1.05;
-                 if (j == 2) then tempo_rede = tempo_rede*1.10;
+                 if (j == 0) then tempo_rede = tempo_rede*1.10;
                                  
                  if (request(link[3],i,0)!= 1) then schedule(6,tempo_rede,i); 
             break;
@@ -209,12 +202,19 @@ main()
             case 8:  /* release cpu, select disk */
               release(cpu,i);
               			  
-		      if (p->esc == 0) then{
-                                    if (p->loc == 2) then schedule(9,0.0,i);
-                                       else if (p->def_rec == 1)then schedule(11,0.0,i);
-                                            else schedule(9,0.0,i);
+		      if (p->esc == 0) then{//Caso nao tenha escolhido nenhum recurso
+                 if (p->def_rec == 2) //Caso o recurso seja disco
+                  {              
+                    if( i == 1 || i == 2 || i == 3) then p->un = irandom(1,3); //selecionar disco para editores
+                    else if(i == 4 || i == 7 || i == 10 || i == 11 || i == 12) then p->un = 1; // disco para o setor 1
+                         else if(i == 5 || i == 8 || i == 12 || i == 13 ) then p->un = 2; //Disco para o setor 2
+                         else p->un = 3; //Disco para o setor 3
+                  }
+                  else //impressora
+                 
+                 schedule(9,0.0,i);
                                             
-                                    }
+                 }
                                     
 		      else if(p->loc == 1) then schedule(13,0.0,i);
 		           else schedule(14,0.0,i);
