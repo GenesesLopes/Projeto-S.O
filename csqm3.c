@@ -1,4 +1,3 @@
-
 /**********************************************************************/
 /*                                                                    */
 /*         File csqm.c:  Central Server Queueing Network Model        */
@@ -39,21 +38,32 @@ int
   cpu,               /* cpu facility descriptor   */
   nts = 10000,         /* no. of tours to simulate  */
   link[5],             /*Links*/
-  aux,
+  aux,                 //Variavel que guarda os valores gerados randomicamente
   impressora[3];             /*Impressora*/
   
   
 float
   tc[3] = {4.5, 4.0, 3.5},  /* classe 0,1,2 tempo de cpu  */
-  //td = 25.0, sd = 7.5,   /* disk time mean, std. dev. */
-  td = 29.0, sd = 8.0,   /* disk time mean, std. dev. */
-  timp[3] = {0.0, 35.0, 34.0}, sdimp[3] = {0.0, 11.0, 10.0};
+  td = 29.0,   //Tempo de disco
+  sd = 8.0,   /* disk time mean, std. dev. */
+  timp[3] = {0.0, 35.0, 34.0}, //Tempo de ultilizacao das impressoras
+  sdimp[3] = {0.0, 11.0, 10.0};//DP de impressoras
   
 main()
   {
-    int i, j, event, n_intra[3], n_inter[1]; 
+    int 
+    i, //job que esta sendo tratano no instante t
+    j, // represena a classe que esta sendo tratano no instante t
+    event, // representa o evento
+    n_intra[3], //vetor de links de entrada da intranet
+    n_inter[1]; //vetor de link de entrada da internet
 	
-	float t, s_intra[3], s_inter[1], velRede = 1000000.0, tempo_rede; 
+	float 
+    t, //
+    s_intra[3], 
+    s_inter[1], 
+    velRede = 2000000.0, 
+    tempo_rede; 
 	
 	struct token *p;
     
@@ -102,13 +112,14 @@ main()
     disk[2] = facility("Disco-2",1);
     disk[3] = facility("Disco-3",1);
         
-    impressora[1] = facility("Impressora-1",1);
-    impressora[2] = facility("Impressora-2",1);
+    impressora[1] = facility("Impressora-1(IMPA)",1); //Criando recurso impressora 1
+    impressora[2] = facility("Impressora-2(IMPB)",1);
      
-    stream(2);//Semente (Diretamente ligado a numeros randomicos )
+    stream(5);//Semente (Diretamente ligado a numeros randomicos )
+    
     // agendamento intranet/internet:
-    schedule(1,0.15,1);
-    schedule(2,0.15,10);
+    schedule(1,0.15,1); //Agendando job 1 para inicio de ciclo intranet
+    schedule(2,0.15,10);//Agendando job 10 para inicio de ciclo internet
     schedule(1,0.15,2);
     schedule(2,0.15,11);
     schedule(1,0.15,3);
@@ -129,8 +140,8 @@ main()
     while (nts) //roda ate zero
       {
         
-        cause(&event,&i); 
-		p=&task[i];
+        cause(&event,&i); //Direciona job para case
+		p=&task[i];// ponteiro esta apontando para a estrutura de atributos do job
         
         switch(event)
           {
@@ -258,10 +269,20 @@ main()
             break;
             
             case 13: //criando link 2 Intranet
-                if (request(link[2],i,0)!= 1) then schedule(15,tempo_rede,i); 
+                 j=p->cls;
+                 tempo_rede = (p->pac * 8000.0) / velRede;
+                 
+                 if (j == 1) then tempo_rede = tempo_rede*1.05;
+                 if (j == 0) then tempo_rede = tempo_rede*1.10;
+                 if (request(link[2],i,0)!= 1) then schedule(15,tempo_rede,i); 
             break;
             
             case 14: //criando link 4 Internet
+                 j=p->cls;
+                 tempo_rede = (p->pac * 8000.0) / velRede;
+                 
+                 if (j == 1) then tempo_rede = tempo_rede*1.05;
+                 if (j == 0) then tempo_rede = tempo_rede*1.10;
                 if (request(link[4],i,0)!= 1) then schedule(16,tempo_rede,i); 
             break;
             
@@ -292,12 +313,10 @@ main()
       }
     reportf(); 
     printf("\n\n");
-    printf("\n Tempo de ciclo da classe 0 Intranet = %8.2f ms",s_intra[0]/n_intra[0]);
-    printf("\n Tempo de ciclo da classe 1 Intranet = %8.2f ms",s_intra[1]/n_intra[1]);
-    printf("\n Tempo de ciclo da classe 0 Internet = %8.2f ms",s_inter[0]/n_inter[0]);
-    printf("\n Tempo de ciclo da classe 1 Internet = %8.2f ms",s_inter[1]/n_inter[1]);
+    printf("\n Tempo de ciclo da classe 0 Intranet (secretarios) = %8.2f ms",s_intra[0]/n_intra[0]);
+    printf("\n Tempo de ciclo da classe 1 Intranet (Redatores) = %8.2f ms",s_intra[1]/n_intra[1]);
+    printf("\n Tempo de ciclo da classe 2 Intranet (editores) = %8.2f ms",s_intra[2]/n_intra[2]);
+    printf("\n Tempo de ciclo da classe 0 Internet (jornalistas) = %8.2f ms",s_inter[0]/n_inter[0]);
     printf("\n\n");
     system("pause");
   }
-
-
